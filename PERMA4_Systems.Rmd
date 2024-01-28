@@ -1,0 +1,655 @@
+---
+title: "PERMA4 Validation Study"
+author: "Scott I. Donaldson, PhD"
+date: "09/04/2023"
+editor_options: 
+  chunk_output_type: console
+---
+```{r Packages}
+#Packages
+library(readxl)
+library(ggplot2)
+library(psych)
+library(freqdist)
+library(dplyr)
+library(tidyverse)
+library(broom)
+library(lavaan)
+library(sem)
+library(Hmisc)
+library(ISLR)
+library(corrplot)
+library(lavaan)
+library(semTools)
+```
+```{r Import data}
+library(haven)
+Validation_Study <- read_sav("~/Desktop/D&A/McQuaid/Research/ValidationStudy/DATA/PERMA4_Validation_Study.sav")
+
+library(readxl)
+Demos <- read_excel("~/Desktop/D&A/McQuaid/Research/ValidationStudy/DATA/Demos.xlsm")
+
+joined_data <- inner_join(Validation_Study, 
+                          Demos, 
+                          by="Prolific_ID")
+
+Final_DATA <- joined_data[-(1:3), ]
+
+```
+```{r Variable recode}
+#Language Recode
+Final_DATA$Language_Recode[Final_DATA$Language=="English"] <- "English"
+
+Final_DATA$Language_Recode[is.na(Final_DATA$Language_Recode)] <- "Non_English"
+
+#Workgroups Recode
+Final_DATA$Workgroups_Recode[Final_DATA$Workgroups=="I sometimes work as part of a group and sometimes alone, I work as part of a small group 2-10"] <- "I work as part of a small group 2-10"
+
+Final_DATA$Workgroups_Recode[Final_DATA$Workgroups=="I work as part of a small group 2-10"] <- "I work as part of a small group 2-10"
+
+Final_DATA$Workgroups_Recode[is.na(Final_DATA$Workgroups_Recode)] <- "I work as part of a large group 10+ "
+
+
+
+```
+```{r Demographics}
+#Sex 
+freqdist::freqdist(Final_DATA$Sex)
+
+#Age
+Final_DATA$Age.y <- as.numeric(Final_DATA$Age.y)
+mean(Final_DATA$Age.y,
+     na.rm = TRUE)
+sd(Final_DATA$Age.y,
+   na.rm = TRUE)
+
+#Degree
+freqdist::freqdist(Final_DATA$Degree)
+
+#Ethnicity
+freqdist::freqdist(Final_DATA$Ethnicity_Final)
+
+#Income
+freqdist::freqdist(Final_DATA$Income)
+
+#WorkGroup
+freqdist::freqdist(Final_DATA$Workgroups_Recode)
+
+
+
+```
+```{r PERMA4 and work descriptives}
+mean(PERMA4_Score_I)
+sd(PERMA4_Score_I)
+
+mean(PERMA4_Score_T)
+sd(PERMA4_Score_T)
+
+mean(PERMA4_Score_S)
+sd(PERMA4_Score_S)
+
+mean(PsyCap_Score)
+sd(PsyCap_Score)
+
+mean(SWLS_Score)
+sd(SWLS_Score)
+
+mean(JobStress_Score)
+sd(JobStress_Score)
+
+mean(JAWS_PositiveEmotion_Score)
+sd(JAWS_PositiveEmotion_Score)
+
+mean(JAWS_NegativeEmotion_Score)
+sd(JAWS_NegativeEmotion_Score)
+
+mean(Proact_I_Score, na.rm = TRUE)
+sd(Proact_I_Score, na.rm = TRUE)
+
+mean(Proact_T_Score, na.rm = TRUE)
+sd(Proact_T_Score, na.rm = TRUE)
+
+mean(Proact_O_Score, na.rm = TRUE)
+sd(Proact_O_Score, na.rm = TRUE)
+
+mean(Proficiency_I_Score, na.rm = TRUE)
+sd(Proficiency_I_Score, na.rm = TRUE)
+
+mean(Proficiency_T_Score, na.rm = TRUE)
+sd(Proficiency_T_Score, na.rm = TRUE)
+
+mean(Proficiency_O_Score, na.rm = TRUE)
+sd(Proficiency_O_Score, na.rm = TRUE)
+
+mean(Adapt_I_Score, na.rm = TRUE)
+sd(Adapt_I_Score, na.rm = TRUE)
+
+mean(Adapt_T_Score, na.rm = TRUE)
+sd(Adapt_T_Score, na.rm = TRUE)
+
+mean(Adapt_O_Score, na.rm = TRUE)
+sd(Adapt_O_Score, na.rm = TRUE)
+
+```
+```{r Confirmatory factor analysis - individual}
+CFA_I <- Final_DATA[, c(12:20)]
+
+
+model <- 'f1 =~ PositiveEmotions_I + 
+          Engagement_I +
+          Relationships_I +
+          Meaning_I + 
+          Accomplishment_I +
+          Health_I +
+          Mindset_I +
+          Environment_I +
+          EconomicSecurity_I'
+          
+fit <- cfa(model, CFA_I)
+summary(fit, 
+        fit.measures = TRUE,
+        standardized = TRUE)
+
+inspect(fit, "rsquare")
+standardizedsolution(fit, type = "std.all")
+parameterestimates(fit, standardized = TRUE, rsquare = TRUE)
+modificationindices(fit, sort. = TRUE, minimum.value = 30.00)
+residuals(fit)
+fitmeasures(fit)
+          
+```
+```{r Confirmatory factor analysis - team}
+CFA_T <- Final_DATA[, c(22:30)]
+
+
+model <- 'f1 =~ PositiveEmotions_T + 
+          Engagement_T +
+          Relationships_T +
+          Meaning_T + 
+          Accomplishment_T +
+          Health_T +
+          Mindset_T +
+          Environment_T +
+          EconomicSecurity_T'
+          
+fit <- cfa(model, CFA_T)
+summary(fit, 
+        fit.measures = TRUE,
+        standardized = TRUE)
+          
+```
+```{r Confirmatory factor analysis - supervisor}
+CFA_S <- Final_DATA[, c(31:39)]
+
+model <- 'f1 =~ PositiveEmotions_S + 
+          Engagement_S +
+          Relationships_S +
+          Meaning_S + 
+          Accomplishment_S +
+          Health_S +
+          Mindset_S +
+          Environment_S +
+          EconomicSecurity_S'
+          
+fit <- cfa(model, CFA_S)
+summary(fit, 
+        fit.measures = TRUE,
+        standardized = TRUE)
+          
+```
+```{r Confirmatory factor analysis - cantril}
+CFA_Lad <- Validation_Study[, c(124:132)]
+
+model <- 'f1 =~ Positiveemotion_lad + 
+          Engagement_lad +
+          Relationships_lad +
+          Meaning_lad + 
+          Accomplishment_lad +
+          Health_lad +
+          Mindset_lad +
+          Environment_lad +
+          Economic_lad'
+          
+fit <- cfa(model, CFA_Lad)
+summary(fit,
+        standardized = TRUE,
+        fit.measures = TRUE)
+          
+```
+```{r Internal consistency}
+alpha(CFA_I)
+alpha(CFA_T)
+alpha(CFA_S)
+
+#PsyCap
+PsyCap_Alpha <- Final_DATA[, c(114:121)]
+alpha(PsyCap_Alpha)
+
+#SWLS
+SWLS_Alpha <- Final_DATA[, c(76:80)]
+alpha(SWLS_Alpha)
+
+#Job Stress
+JS_Alpha <- Final_DATA[, c(70:72,74,75)]
+alpha(JS_Alpha)
+
+#JAWS Negative
+JAWS_N_Alpha <- Final_DATA[, c(40,41,43,46,47,48,53:56)]
+alpha(JAWS_N_Alpha)
+
+#JAWS Positive
+JAWS_P_Alpha <- Final_DATA[, c(42,44,45,49:52,57:59)]
+alpha(JAWS_P_Alpha)
+
+#Individual Proact
+Proact_I_Alpha <- Final_DATA[, c(105:107)]
+alpha(Proact_I_Alpha)
+
+#Team Proact
+Proact_T_Alpha <- Final_DATA[, c(108:110)]
+alpha(Proact_T_Alpha)
+
+#Org Proact
+Proact_O_Alpha <- Final_DATA[, c(111:113)]
+alpha(Proact_O_Alpha)
+
+#Individual Prof
+Prof_I_Alpha <- Final_DATA[, c(87:89)]
+alpha(Prof_I_Alpha)
+
+#Team Prof
+Prof_T_Alpha <- Final_DATA[, c(90:92)]
+alpha(Prof_T_Alpha)
+
+#Org Prof
+Prof_O_Alpha <- Final_DATA[, c(93:95)]
+alpha(Prof_O_Alpha)
+
+#Individual Adapt
+Adapt_I_Alpha <- Final_DATA[, c(96:98)]
+alpha(Adapt_I_Alpha)
+
+#Team Adapt
+Adapt_T_Alpha <- Final_DATA[, c(99:101)]
+alpha(Adapt_T_Alpha)
+
+#Org Adapt
+Adapt_O_Alpha <- Final_DATA[, c(102:104)]
+alpha(Adapt_O_Alpha)
+
+```
+```{r Intercorrelations}
+#Subset Well-Being Measures
+Intercor <-  data.frame(PERMA4_Score_I,
+                        PERMA4_Score_S,
+                        PERMA4_Score_T,
+                        PsyCap_Score,
+                        SWLS_Score,
+                        JobStress_Score,
+                        JAWS_PositiveEmotion_Score,
+                        JAWS_NegativeEmotion_Score)
+cor(Intercor, 
+    method = "pearson" , 
+    use = "pairwise.complete.obs")
+
+#Work Behaviors
+WorkBehaviors <-  data.frame(PERMA4_Score_I,
+                        PERMA4_Score_S,
+                        PERMA4_Score_T,
+                        PERMA4_Ladder_Score,
+                        Proact_I_Score,
+                        Proact_T_Score,
+                        Proact_O_Score,
+                        Proficiency_I_Score,
+                        Proficiency_T_Score,
+                        Proficiency_O_Score,
+                        Adapt_I_Score,
+                        Adapt_T_Score,
+                        Adapt_O_Score)
+cor(WorkBehaviors, 
+    method = "pearson" , 
+    use = "pairwise.complete.obs")
+
+cor.test()
+
+```
+```{r Hiearchical regression}
+#PsyCap
+model1=lm(PsyCap_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(PsyCap_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(PsyCap_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#SWLS
+model1=lm(SWLS_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(SWLS_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(SWLS_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Job Stress
+model1=lm(JobStress_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(JobStress_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(JobStress_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#JAWS Positive
+model1=lm(JAWS_PositiveEmotion_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(JAWS_PositiveEmotion_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(JAWS_PositiveEmotion_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#JAWS Negative
+model1=lm(JAWS_NegativeEmotion_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(JAWS_NegativeEmotion_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(JAWS_NegativeEmotion_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proact Individual
+model1=lm(Proact_I_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proact_I_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proact_I_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proact Team
+model1=lm(Proact_T_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proact_T_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proact_T_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proact Org
+model1=lm(Proact_O_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proact_O_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proact_O_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proficiency Individual
+model1=lm(Proficiency_I_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proficiency_I_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proficiency_I_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proficiency Team
+model1=lm(Proficiency_T_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proficiency_T_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proficiency_T_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Proficiency Org
+model1=lm(Proficiency_O_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Proficiency_O_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Proficiency_O_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Adapt Individual
+model1=lm(Adapt_I_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Adapt_I_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Adapt_I_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Adapt Team
+model1=lm(Adapt_T_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Adapt_T_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Adapt_T_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+#Adapt Org
+model1=lm(Adapt_O_Score~PERMA4_Score_I,
+          data =  Final_DATA)
+model2=lm(Adapt_O_Score~PERMA4_Score_I + PERMA4_Score_S,
+          data =  Final_DATA)
+model3=lm(Adapt_O_Score~PERMA4_Score_I + PERMA4_Score_S +                 PERMA4_Score_T,
+          data =  Final_DATA)
+
+anova(model1,model2,model3)
+summary(model1)
+summary(model2)
+summary(model3)
+
+```
+```{r Measurement invariance - PERMA4(I) - work groups}
+CFA_I <- Final_DATA[, c(12:20)]
+
+model <- 'f1 =~ PositiveEmotions_I + 
+          Engagement_I +
+          Relationships_I +
+          Meaning_I + 
+          Accomplishment_I +
+          Health_I +
+          Mindset_I +
+          Environment_I +
+          EconomicSecurity_I'
+
+# Configural model
+cfa.config <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode")
+
+summary(cfa.config, 
+        fit.measures = TRUE, 
+        standardized = TRUE)
+
+# Metric model
+cfa.metric <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode", 
+                  group.equal = "loadings")
+
+
+# Model comparison
+Comparefit <- compareFit(cfa.config, cfa.metric)
+summary(Comparefit)
+
+# Scalar model
+cfa.scalar <- cfa(model, 
+                  data = Final_DATA, 
+                  estimator = "WLSMV", 
+                  group = "Workgroups_Recode", 
+                  group.equal = c("loadings","intercepts"))
+# Model comparison
+Comparefit <- compareFit(cfa.metric, cfa.scalar)
+summary(Comparefit)
+
+# model comparison tests
+lavTestLRT(cfa.config,
+           cfa.metric,
+           cfa.scalar)
+
+
+```
+```{r Measurement invariance - PERMA4(S) - work groups}
+CFA_S <- Final_DATA[, c(31:39)]
+
+model <- 'f1 =~ PositiveEmotions_S + 
+          Engagement_S +
+          Relationships_S +
+          Meaning_S + 
+          Accomplishment_S +
+          Health_S +
+          Mindset_S +
+          Environment_S +
+          EconomicSecurity_S'
+
+# Configural model
+cfa.config <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode")
+
+summary(cfa.config, 
+        fit.measures = TRUE, 
+        standardized = TRUE)
+
+# Metric model
+cfa.metric <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode", 
+                  group.equal = "loadings")
+
+# Model comparison
+Comparefit <- compareFit(cfa.config, cfa.metric)
+summary(Comparefit)
+
+# Scalar model
+cfa.scalar <- cfa(model, 
+                  data = Final_DATA, 
+                  estimator = "WLSMV", 
+                  group = "Workgroups_Recode", 
+                  group.equal = c("loadings","intercepts"))
+# Model comparison
+Comparefit <- compareFit(cfa.metric, cfa.scalar)
+summary(Comparefit)
+
+# model comparison tests
+lavTestLRT(cfa.config,
+           cfa.metric,
+           cfa.scalar)
+
+
+```
+```{r Measurement invariance - PERMA4(T) - work groups}
+CFA_T <- Final_DATA[, c(22:30)]
+
+model <- 'f1 =~ PositiveEmotions_T + 
+          Engagement_T +
+          Relationships_T +
+          Meaning_T + 
+          Accomplishment_T +
+          Health_T +
+          Mindset_T +
+          Environment_T +
+          EconomicSecurity_T'
+
+# Configural model
+cfa.config <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode")
+
+summary(cfa.config, 
+        fit.measures = TRUE, 
+        standardized = TRUE)
+
+# Metric model
+cfa.metric <- cfa(model, 
+                  data = Final_DATA,
+                  estimator = "WLSMV",
+                  group = "Workgroups_Recode", 
+                  group.equal = "loadings")
+
+# Model comparison
+Comparefit <- compareFit(cfa.config, cfa.metric)
+summary(Comparefit)
+
+# Scalar model
+cfa.scalar <- cfa(model, 
+                  data = Final_DATA, 
+                  estimator = "WLSMV", 
+                  group = "Workgroups_Recode", 
+                  group.equal = c("loadings","intercepts"))
+# Model comparison
+Comparefit <- compareFit(cfa.metric, cfa.scalar)
+summary(Comparefit)
+
+# model comparison tests
+lavTestLRT(cfa.config,
+           cfa.metric,
+           cfa.scalar)
+
+
+```
+
+
